@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Admin - Live Polling</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .create {
+            background: #2563eb;
+            color: white;
+            width: 100%;
+        }
+
+        .start {
+            background: #16a34a;
+            color: white;
+        }
+
+        .end {
+            background: #dc2626;
+            color: white;
+        }
+
+        #roomSection {
+            display: none;
+            margin-top: 30px;
+        }
+
+        #roomCode {
+            font-size: 35px;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 5px;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Admin Panel</h1>
+
+    <label>Question</label>
+
+    <input
+        type="text"
+        id="question"
+        placeholder="Enter your question"
+    >
+
+    <label>Option 1</label>
+
+    <input
+        type="text"
+        class="option"
+        placeholder="Option 1"
+    >
+
+    <label>Option 2</label>
+
+    <input
+        type="text"
+        class="option"
+        placeholder="Option 2"
+    >
+
+    <label>Option 3</label>
+
+    <input
+        type="text"
+        class="option"
+        placeholder="Option 3"
+    >
+
+    <label>Option 4</label>
+
+    <input
+        type="text"
+        class="option"
+        placeholder="Option 4"
+    >
+
+    <button
+        class="create"
+        onclick="createPoll()">
+
+        Create Poll
+
+    </button>
+
+
+    <div id="roomSection">
+
+        <h2>Room Created</h2>
+
+        <p>Share this code with participants:</p>
+
+        <div id="roomCode"></div>
+
+        <p>
+            Participants joined:
+            <strong id="participantCount">0</strong>
+        </p>
+
+        <button
+            class="start"
+            onclick="startPoll()">
+
+            Begin Voting
+
+        </button>
+
+        <button
+            class="end"
+            onclick="endPoll()">
+
+            End Poll
+
+        </button>
+
+        <div id="results"></div>
+
+    </div>
+
+    <div id="message"></div>
+
+</div>
+
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+
+    const socket = io();
+
+    let roomCode = "";
+
+
+    function createPoll() {
+
+        const question =
+            document.getElementById("question").value;
+
+        const optionInputs =
+            document.querySelectorAll(".option");
+
+        const options = [];
+
+        optionInputs.forEach(input => {
+
+            if (input.value.trim() !== "") {
+
+                options.push(input.value.trim());
+
+            }
+
+        });
+
+
+        socket.emit("create_poll", {
+
+            question: question,
+
+            options: options
+
+        });
+
+    }
+
+
+    socket.on("poll_created", function(data) {
+
+        roomCode = data.room_code;
+
+        document.getElementById("roomSection")
+            .style.display = "block";
+
+        document.getElementById("roomCode")
+            .textContent = roomCode;
+
+        document.getElementById("message")
+            .textContent = "Poll created successfully!";
+
+    });
+
+
+    socket.on("participant_count", function(data) {
+
+        document.getElementById("participantCount")
+            .textContent = data.count;
+
+    });
+
+
+    function startPoll() {
+
+        socket.emit("start_poll", {
+
+            room_code: roomCode
+
+        });
+
+        document.getElementById("message")
+            .textContent = "Voting has started!";
+
+    }
+
+
+    function endPoll() {
+
+        socket.emit("end_poll", {
+
+            room_code: roomCode
+
+        });
+
+    }
+
+
+    socket.on("results_updated", function(data) {
+
+        displayResults(data);
+
+    });
+
+
+    socket.on("poll_ended", function(data) {
+
+        displayResults(data);
+
+        document.getElementById("message")
+            .textContent = "Poll ended.";
+
+    });
+
+
+    function displayResults(data) {
+
+        const results =
+            document.getElementById("results");
+
+        results.innerHTML =
+            "<h2>Live Results</h2>";
+
+        for (
+            let i = 0;
+            i < data.options.length;
+            i++
+        ) {
+
+            const percentage =
+                data.total_votes === 0
+                    ? 0
+                    : (data.votes[i] /
+                       data.total_votes) * 100;
+
+            results.innerHTML += `
+
+                <div style="margin-top:15px">
+
+                    <strong>
+                        ${data.options[i]}
+                    </strong>
+
+                    <div style="
+                        background:#ddd;
+                        height:25px;
+                        border-radius:5px;
+                        overflow:hidden;
+                        margin-top:5px;
+                    ">
+
+                        <div style="
+                            width:${percentage}%;
+                            height:100%;
+                            background:#2563eb;
+                        "></div>
+
+                    </div>
+
+                    <small>
+                        ${data.votes[i]} votes
+                        (${percentage.toFixed(1)}%)
+                    </small>
+
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    socket.on("error_message", function(data) {
+
+        document.getElementById("message")
+            .textContent = data.message;
+
+    });
+
+</script>
+
+</body>
+
+</html>

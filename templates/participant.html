@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Participant - Live Polling</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>Join Live Poll</h1>
+
+        <p class="subtitle">
+            Enter the room code provided by the host.
+        </p>
+
+        <!-- JOIN SECTION -->
+
+        <div id="joinSection">
+
+            <input
+                type="text"
+                id="roomInput"
+                placeholder="Enter Room Code"
+                maxlength="6"
+            >
+
+            <button
+                class="primary-btn"
+                onclick="joinPoll()">
+
+                Join Poll
+
+            </button>
+
+        </div>
+
+
+        <!-- WAITING SECTION -->
+
+        <div id="waitingSection"
+             class="hidden">
+
+            <div class="status-icon">
+                ⏳
+            </div>
+
+            <h2>You're in!</h2>
+
+            <p>
+                You're in, waiting for the host to start.
+            </p>
+
+            <p>
+                Room Code:
+                <strong id="waitingRoomCode"></strong>
+            </p>
+
+        </div>
+
+
+        <!-- VOTING SECTION -->
+
+        <div id="votingSection"
+             class="hidden">
+
+            <h2 id="questionText"></h2>
+
+            <div id="optionsContainer"></div>
+
+            <p id="voteMessage"
+               class="message">
+            </p>
+
+        </div>
+
+
+        <!-- RESULTS SECTION -->
+
+        <div id="resultsSection"
+             class="hidden">
+
+            <h2>Live Results</h2>
+
+            <div id="participantResults"></div>
+
+        </div>
+
+
+        <p id="errorMessage"
+           class="error">
+        </p>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>
